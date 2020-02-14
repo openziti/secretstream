@@ -6,14 +6,13 @@ import (
 	"testing"
 )
 
-
 func TestEncodeDecode(t *testing.T) {
 	common_test(t, NewEncryptor, NewDecryptor)
 }
 
 func common_test(t *testing.T,
-	makeEnc func([]byte)(Encryptor, []byte, error),
-	makeDec func(k, h []byte)(Decryptor, error)) {
+	makeEnc func([]byte) (Encryptor, []byte, error),
+	makeDec func(k, h []byte) (Decryptor, error)) {
 	key := NewStreamKey()
 
 	sender, hdr, err := makeEnc(key)
@@ -21,7 +20,7 @@ func common_test(t *testing.T,
 		t.Fatal(err)
 	}
 
-	plain_text_messages := [][]byte {
+	plain_text_messages := [][]byte{
 		[]byte("Hello world"),
 		randomData(100),
 		randomData(1000),
@@ -29,11 +28,10 @@ func common_test(t *testing.T,
 		[]byte("This is good-bye!"),
 	}
 
-
 	var coded_msgs [][]byte
 
 	for i, m := range plain_text_messages {
-		coded, err := sender.Push(m, byte(i % 2))
+		coded, err := sender.Push(m, byte(i%2))
 		if err != nil {
 			t.Error(err)
 		}
@@ -51,7 +49,7 @@ func common_test(t *testing.T,
 		if err != nil {
 			t.Error("decoding error", err)
 		}
-		if tag != byte(i % 2) {
+		if tag != byte(i%2) {
 			t.Errorf("unexpected tag received")
 		}
 		decoded_msgs = append(decoded_msgs, decoded)
@@ -64,7 +62,7 @@ func common_test(t *testing.T,
 	}
 }
 
-func randomData(c int) []byte{
+func randomData(c int) []byte {
 	out := make([]byte, c)
 	rand.Read(out)
 	return out

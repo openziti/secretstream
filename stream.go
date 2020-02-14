@@ -14,19 +14,19 @@ import (
 // public constants
 const (
 	TagMessage = 0
-	TagPush = 0x01
-	TagRekey = 0x02
-	TagFinal = TagPush | TagRekey
+	TagPush    = 0x01
+	TagRekey   = 0x02
+	TagFinal   = TagPush | TagRekey
 
-	StreamKeyBytes = chacha20poly1305.KeySize
+	StreamKeyBytes    = chacha20poly1305.KeySize
 	StreamHeaderBytes = chacha20poly1305.NonceSizeX
-	StreamABytes = 16 + 1
+	StreamABytes      = 16 + 1
 )
-
 
 const crypto_core_hchacha20_INPUTBYTES = 16
 const crypto_secretstream_xchacha20poly1305_INONCEBYTES = 8
 const crypto_secretstream_xchacha20poly1305_COUNTERBYTES = 4
+
 var pad0 [16]byte
 
 var notImplemented = errors.New("not implemented")
@@ -35,9 +35,9 @@ var invalidInput = errors.New("invalid input")
 var cryptoFailure = errors.New("crypto failed")
 
 type streamState struct {
-	k [StreamKeyBytes]byte
+	k     [StreamKeyBytes]byte
 	nonce [chacha20poly1305.NonceSize]byte
-	pad [8]byte
+	pad   [8]byte
 }
 
 func (s *streamState) reset() {
@@ -69,9 +69,9 @@ func NewStreamKey() []byte {
 	return k
 }
 
-func NewEncryptor(key []byte)(Encryptor, []byte, error) {
+func NewEncryptor(key []byte) (Encryptor, []byte, error) {
 	if len(key) != StreamKeyBytes {
-		return nil,  nil, invalidKey
+		return nil, nil, invalidKey
 	}
 
 	header := make([]byte, StreamHeaderBytes)
@@ -92,7 +92,7 @@ func NewEncryptor(key []byte)(Encryptor, []byte, error) {
 	}
 
 	for i, b := range header[crypto_core_hchacha20_INPUTBYTES:] {
-		stream.nonce[i + crypto_secretstream_xchacha20poly1305_COUNTERBYTES] = b
+		stream.nonce[i+crypto_secretstream_xchacha20poly1305_COUNTERBYTES] = b
 	}
 	// fmt.Printf("stream: %+v\n", stream.streamState)
 
@@ -123,14 +123,14 @@ func (s *encryptor) Push(plain []byte, tag byte) ([]byte, error) {
 	//sodium_misuse();
 	//}
 
-	out := make([]byte, mlen+ StreamABytes)
+	out := make([]byte, mlen+StreamABytes)
 
 	chacha, err := chacha20.NewUnauthenticatedCipher(s.k[:], s.nonce[:])
 	if err != nil {
 		return nil, err
 	}
 	//crypto_stream_chacha20_ietf(block, sizeof block, state->nonce, state->k);
-	chacha.XORKeyStream(block[:],block[:])
+	chacha.XORKeyStream(block[:], block[:])
 
 	//crypto_onetimeauth_poly1305_init(&poly1305_state, block);
 	var poly_init [32]byte
@@ -146,7 +146,7 @@ func (s *encryptor) Push(plain []byte, tag byte) ([]byte, error) {
 	//memset(block, 0, sizeof block);
 	//block[0] = tag;
 	memzero(block[:])
-	block[0] = tag;
+	block[0] = tag
 
 	//
 	//crypto_stream_chacha20_ietf_xor_ic(block, block, sizeof block, state->nonce, 1U, state->k);
@@ -167,7 +167,6 @@ func (s *encryptor) Push(plain []byte, tag byte) ([]byte, error) {
 	padlen := (0x10 - len(block) + mlen) & 0xf
 	_, _ = poly.Write(pad0[:padlen])
 
-
 	//
 	//STORE64_LE(slen, (uint64_t) adlen);
 	//crypto_onetimeauth_poly1305_update(&poly1305_state, slen, sizeof slen);
@@ -176,7 +175,7 @@ func (s *encryptor) Push(plain []byte, tag byte) ([]byte, error) {
 
 	//STORE64_LE(slen, (sizeof block) + mlen);
 	//crypto_onetimeauth_poly1305_update(&poly1305_state, slen, sizeof slen);
-	binary.LittleEndian.PutUint64(slen[:], uint64(len(block) +mlen))
+	binary.LittleEndian.PutUint64(slen[:], uint64(len(block)+mlen))
 	_, _ = poly.Write(slen[:])
 
 	//
@@ -186,7 +185,6 @@ func (s *encryptor) Push(plain []byte, tag byte) ([]byte, error) {
 	copy(mac, poly.Sum(nil))
 	//sodium_memzero(&poly1305_state, sizeof poly1305_state);
 	//
-
 
 	//XOR_BUF(STATE_INONCE(state), mac, crypto_secretstream_xchacha20poly1305_INONCEBYTES);
 	//sodium_increment(STATE_COUNTER(state), crypto_secretstream_xchacha20poly1305_COUNTERBYTES);
@@ -199,7 +197,6 @@ func (s *encryptor) Push(plain []byte, tag byte) ([]byte, error) {
 	//crypto_secretstream_xchacha20poly1305_COUNTERBYTES)) {
 	//crypto_secretstream_xchacha20poly1305_rekey(state);
 	//}
-
 
 	//if (outlen_p != NULL) {
 	//*outlen_p = crypto_secretstream_xchacha20poly1305_ABYTES + mlen;
@@ -258,7 +255,6 @@ func (s *decryptor) Pull(in []byte) ([]byte, byte, error) {
 	//if (tag_p != NULL) {
 	//*tag_p = 0xff;
 	//}
-
 
 	//if (inlen < crypto_secretstream_xchacha20poly1305_ABYTES) {
 	//return -1;
@@ -324,7 +320,7 @@ func (s *decryptor) Pull(in []byte) ([]byte, byte, error) {
 
 	//STORE64_LE(slen, (sizeof block) + mlen);
 	//crypto_onetimeauth_poly1305_update(&poly1305_state, slen, sizeof slen);
-	binary.LittleEndian.PutUint64(slen[:], uint64(len(block) + mlen))
+	binary.LittleEndian.PutUint64(slen[:], uint64(len(block)+mlen))
 	poly.Write(slen[:])
 
 	//
@@ -374,7 +370,7 @@ func memzero(b []byte) {
 	}
 }
 
-func xor_buf (out, in []byte) {
+func xor_buf(out, in []byte) {
 	for i := range out {
 		out[i] ^= in[i]
 	}

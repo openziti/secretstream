@@ -12,7 +12,7 @@ var seed = makeSeed()
 func makeSeed() []byte {
 	s := make([]byte, SeedBytes)
 	for i := range s {
-		s[i] = byte(i);
+		s[i] = byte(i)
 	}
 	return s
 }
@@ -28,7 +28,7 @@ func seedIncrement(s []byte) []byte {
 	}
 
 	return r
- }
+}
 
 func TestNewKeyPair(t *testing.T) {
 	pk, _ := hex.DecodeString("0e0216223f147143d32615a91189c288c1728cba3cc5f9f621b1026e03d83129")
@@ -46,23 +46,17 @@ func TestNewKeyPair(t *testing.T) {
 	}{
 		{
 			name: "pre-seeded key",
-			args: args{ seed:seed },
+			args: args{seed: seed},
 			want: &KeyPair{
 				pk: pk,
 				sk: sk,
 			},
-			wantErr:false,
-		},
-		{
-			name: "short seed",
-			args: args{ seed:[]byte("short seed") },
-			want: nil,
-			wantErr:true,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewKeyPair(tt.args.seed)
+			got, err := newKeyPairFromSeed(tt.args.seed)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewKeyPair() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -75,19 +69,19 @@ func TestNewKeyPair(t *testing.T) {
 }
 
 func TestKeyExchange_Seeded(t *testing.T) {
-	client_pair, err := NewKeyPair(seed)
+	client_pair, err := newKeyPairFromSeed(seed)
 	if err != nil {
 		t.Errorf("failed to get client key pair")
 		return
 	}
-	server_pair, err := NewKeyPair(seedIncrement(seed))
+	server_pair, err := newKeyPairFromSeed(seedIncrement(seed))
 
 	if err != nil {
 		t.Errorf("failed to get server key pair")
 		return
 	}
 
-    clt_rx, _:= hex.DecodeString("749519c68059bce69f7cfcc7b387a3de1a1e8237d110991323bf62870115731a")
+	clt_rx, _ := hex.DecodeString("749519c68059bce69f7cfcc7b387a3de1a1e8237d110991323bf62870115731a")
 	clt_tx, _ := hex.DecodeString("62c8f4fa81800abd0577d99918d129b65deb789af8c8351f391feb0cbf238604")
 
 	client_rx, client_tx, err := client_pair.ClientSessionKeys(server_pair.pk)
@@ -118,12 +112,12 @@ func TestKeyExchange_Seeded(t *testing.T) {
 }
 
 func TestKeyExchange(t *testing.T) {
-	client_pair, err := NewKeyPair(nil)
+	client_pair, err := NewKeyPair()
 	if err != nil {
 		t.Errorf("failed to get client key pair")
 		return
 	}
-	server_pair, err := NewKeyPair(nil)
+	server_pair, err := NewKeyPair()
 
 	if err != nil {
 		t.Errorf("failed to get server key pair")
@@ -151,6 +145,5 @@ func TestKeyExchange(t *testing.T) {
 		t.Errorf("ServersSessionKeys(): do not match client's got = %v, want %v", server_tx, client_rx)
 		return
 	}
-
 
 }

@@ -14,11 +14,16 @@ type sodiumStream struct {
 	state C.crypto_secretstream_xchacha20poly1305_state
 }
 
-func NewSodiumSendStream(key []byte) (Encryptor,[]byte, error) {
+func NewSodiumSendStream(key []byte) (Encryptor, []byte, error) {
 	res := &sodiumStream{}
 
+	ckey := C.CBytes(key)
+	defer C.free(ckey)
+
 	header := C.malloc(C.crypto_secretstream_xchacha20poly1305_HEADERBYTES)
-	rc := C.crypto_secretstream_xchacha20poly1305_init_push(&res.state, (*C.uchar)(header), (*C.uchar)(C.CBytes(key)))
+	defer C.free(header)
+
+	rc := C.crypto_secretstream_xchacha20poly1305_init_push(&res.state, (*C.uchar)(header), (*C.uchar)(ckey))
 	if rc != 0 {
 		return nil, nil, cryptoFailure
 	}
@@ -27,13 +32,16 @@ func NewSodiumSendStream(key []byte) (Encryptor,[]byte, error) {
 	return res, C.GoBytes(header, C.crypto_secretstream_xchacha20poly1305_HEADERBYTES), nil
 }
 
-func NewSodiumRecvStream(key []byte, header []byte) (Decryptor,error) {
+func NewSodiumRecvStream(key []byte, header []byte) (Decryptor, error) {
 	res := &sodiumStream{}
 
 	chdr := C.CBytes(header)
 	defer C.free(chdr)
 
-	rc := C.crypto_secretstream_xchacha20poly1305_init_pull(&res.state, (*C.uchar)(chdr), (*C.uchar)(C.CBytes(key)))
+	ckey := C.CBytes(key)
+	defer C.free(ckey)
+
+	rc := C.crypto_secretstream_xchacha20poly1305_init_pull(&res.state, (*C.uchar)(chdr), (*C.uchar)(ckey))
 	if rc != 0 {
 		return nil, cryptoFailure
 	}
@@ -48,6 +56,7 @@ func (s *sodiumStream) Push(plaintext []byte, tag byte) ([]byte, error) {
 
 	cipher_len := len(plaintext) + C.crypto_secretstream_xchacha20poly1305_ABYTES
 	ct := C.malloc((C.ulong)(cipher_len))
+	defer C.free(ct)
 
 	cipher_len_ull := C.ulonglong(cipher_len)
 	pt_len_ull := C.ulonglong(len(plaintext))
