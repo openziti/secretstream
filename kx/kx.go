@@ -18,8 +18,8 @@ var cryptoError = errors.New("crypto error")
 var notImplemented = errors.New("not implemented")
 
 type KeyPair struct {
-	pk []byte
-	sk []byte
+	pk [SessionKeyBytes]byte
+	sk [PublicKeyBytes]byte
 }
 
 func NewKeyPair() (*KeyPair, error) {
@@ -39,24 +39,30 @@ func newKeyPairFromSeed(seed []byte) (*KeyPair, error) {
 
 	hash, _ := blake2b.New(SecretKeyBytes, nil)
 	hash.Write(seed)
-	kp.sk = hash.Sum(nil)
-
-	if len(kp.sk) != SecretKeyBytes {
+	sk := hash.Sum(nil)
+	if len(sk) != SecretKeyBytes {
 		return nil, cryptoError
 	}
+	copy(kp.sk[:], sk)
 
-	kp.pk, err = curve25519.X25519(kp.sk, curve25519.Basepoint)
+	pk, err := curve25519.X25519(kp.sk[:], curve25519.Basepoint)
 	if err != nil {
 		return nil, err
 	}
-	if len(kp.pk) != PublicKeyBytes {
+	if len(pk) != PublicKeyBytes {
 		return nil, cryptoError
 	}
+	copy(kp.pk[:], pk)
+
 	return kp, nil
 }
 
+func (pair *KeyPair) Public() []byte {
+	return pair.pk[:]
+}
+
 func (pair *KeyPair) ClientSessionKeys(server_pk []byte) (rx []byte, tx []byte, err error) {
-	q, err := curve25519.X25519(pair.sk, server_pk)
+	q, err := curve25519.X25519(pair.sk[:], server_pk)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -66,7 +72,7 @@ func (pair *KeyPair) ClientSessionKeys(server_pk []byte) (rx []byte, tx []byte, 
 		return nil, nil, err
 	}
 
-	for _, b := range [][]byte{q, pair.pk, server_pk} {
+	for _, b := range [][]byte{q, pair.Public(), server_pk} {
 		if _, err = h.Write(b); err != nil {
 			return nil, nil, err
 		}
@@ -80,7 +86,7 @@ func (pair *KeyPair) ClientSessionKeys(server_pk []byte) (rx []byte, tx []byte, 
 
 func (pair *KeyPair) ServerSessionKeys(client_pk []byte) (rx []byte, tx []byte, err error) {
 
-	q, err := curve25519.X25519(pair.sk, client_pk)
+	q, err := curve25519.X25519(pair.sk[:], client_pk)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -90,7 +96,7 @@ func (pair *KeyPair) ServerSessionKeys(client_pk []byte) (rx []byte, tx []byte, 
 		return nil, nil, err
 	}
 
-	for _, b := range [][]byte{q, client_pk, pair.pk} {
+	for _, b := range [][]byte{q, client_pk, pair.Public()} {
 		if _, err = h.Write(b); err != nil {
 			return nil, nil, err
 		}

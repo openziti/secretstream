@@ -33,6 +33,9 @@ func seedIncrement(s []byte) []byte {
 func TestNewKeyPair(t *testing.T) {
 	pk, _ := hex.DecodeString("0e0216223f147143d32615a91189c288c1728cba3cc5f9f621b1026e03d83129")
 	sk, _ := hex.DecodeString("cb2f5160fc1f7e05a55ef49d340b48da2e5a78099d53393351cd579dd42503d6")
+	kp := &KeyPair{}
+	copy(kp.pk[:], pk)
+	copy(kp.sk[:], sk)
 
 	type args struct {
 		seed []byte
@@ -45,12 +48,9 @@ func TestNewKeyPair(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "pre-seeded key",
-			args: args{seed: seed},
-			want: &KeyPair{
-				pk: pk,
-				sk: sk,
-			},
+			name:    "pre-seeded key",
+			args:    args{seed: seed},
+			want:    kp,
 			wantErr: false,
 		},
 	}
@@ -84,7 +84,7 @@ func TestKeyExchange_Seeded(t *testing.T) {
 	clt_rx, _ := hex.DecodeString("749519c68059bce69f7cfcc7b387a3de1a1e8237d110991323bf62870115731a")
 	clt_tx, _ := hex.DecodeString("62c8f4fa81800abd0577d99918d129b65deb789af8c8351f391feb0cbf238604")
 
-	client_rx, client_tx, err := client_pair.ClientSessionKeys(server_pair.pk)
+	client_rx, client_tx, err := client_pair.ClientSessionKeys(server_pair.Public())
 	if err != nil {
 		t.Errorf("ClientSessionKeys: error = %v", err)
 		return
@@ -97,7 +97,7 @@ func TestKeyExchange_Seeded(t *testing.T) {
 		t.Errorf("ClientSessionKeys(): TX got = %v, want %v", client_tx, clt_tx)
 	}
 
-	server_rx, server_tx, err := server_pair.ServerSessionKeys(client_pair.pk)
+	server_rx, server_tx, err := server_pair.ServerSessionKeys(client_pair.Public())
 	if err != nil {
 		t.Errorf("ServerSessionKeys: error = %v", err)
 		return
@@ -124,13 +124,13 @@ func TestKeyExchange(t *testing.T) {
 		return
 	}
 
-	client_rx, client_tx, err := client_pair.ClientSessionKeys(server_pair.pk)
+	client_rx, client_tx, err := client_pair.ClientSessionKeys(server_pair.Public())
 	if err != nil {
 		t.Errorf("ClientSessionKeys: error = %v", err)
 		return
 	}
 
-	server_rx, server_tx, err := server_pair.ServerSessionKeys(client_pair.pk)
+	server_rx, server_tx, err := server_pair.ServerSessionKeys(client_pair.Public())
 	if err != nil {
 		t.Errorf("ServerSessionKeys: error = %v", err)
 		return
