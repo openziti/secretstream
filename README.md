@@ -1,7 +1,7 @@
 # secretstream
-Implementation of [libsodium](https://github.com/jedisct1/libsodium)'s secretstream in Go
+Implementation of [libsodium](https://github.com/jedisct1/libsodium)'s [secretstream](https://libsodium.gitbook.io/doc/secret-key_cryptography/secretstream) in Go
 
-The main goal of this project is allow to use secretstream to be used between programs using libsodium and
+The main goal of this project is allow using `secretstream` between programs using libsodium and
 programs written in Go without resorting to wrapping libsodium in Go. golang.org/x/crypto has all necessary
 algorithms to make that happen.
 
