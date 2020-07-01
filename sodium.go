@@ -55,7 +55,7 @@ func (s *sodiumStream) Push(plaintext []byte, tag byte) ([]byte, error) {
 	defer C.free(pt)
 
 	cipher_len := len(plaintext) + C.crypto_secretstream_xchacha20poly1305_ABYTES
-	ct := C.malloc((C.ulong)(cipher_len))
+	ct := C.malloc((C.size_t)(cipher_len))
 	defer C.free(ct)
 
 	cipher_len_ull := C.ulonglong(cipher_len)
@@ -77,7 +77,7 @@ func (s *sodiumStream) Pull(ciphertext []byte) ([]byte, byte, error) {
 
 	mlen := C.ulong(len(ciphertext) - C.crypto_secretstream_xchacha20poly1305_ABYTES)
 	mlen_ull := C.ulonglong(mlen)
-	msg := C.malloc(mlen)
+	msg := C.malloc((C.size_t)(mlen))
 	var tag C.uchar
 
 	if C.crypto_secretstream_xchacha20poly1305_pull(&s.state,
