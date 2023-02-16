@@ -91,7 +91,7 @@ func NewEncryptor(key []byte) (Encryptor, []byte, error) {
 		stream.pad[i] = 0
 	}
 
-	for i, b := range header[crypto_core_hchacha20_INPUTBYTES:] {
+	for _, b := range header[crypto_core_hchacha20_INPUTBYTES:] {
 		stream.nonce[i+crypto_secretstream_xchacha20poly1305_COUNTERBYTES] = b
 	}
 	// fmt.Printf("stream: %+v\n", stream.streamState)
