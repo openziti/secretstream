@@ -64,6 +64,8 @@ func common_test(t *testing.T,
 
 func randomData(c int) []byte {
 	out := make([]byte, c)
-	rand.Read(out)
+	if _, err := rand.Read(out); err != nil {
+		panic(err)
+	}
 	return out
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/chacha20"
 	"golang.org/x/crypto/chacha20poly1305"
+	// nolint:staticcheck
 	"golang.org/x/crypto/poly1305"
 )
 
@@ -24,12 +25,12 @@ const (
 )
 
 const crypto_core_hchacha20_INPUTBYTES = 16
-const crypto_secretstream_xchacha20poly1305_INONCEBYTES = 8
+
+/* const crypto_secretstream_xchacha20poly1305_INONCEBYTES = 8 */
 const crypto_secretstream_xchacha20poly1305_COUNTERBYTES = 4
 
 var pad0 [16]byte
 
-var notImplemented = errors.New("not implemented")
 var invalidKey = errors.New("invalid key")
 var invalidInput = errors.New("invalid input")
 var cryptoFailure = errors.New("crypto failed")
@@ -91,7 +92,7 @@ func NewEncryptor(key []byte) (Encryptor, []byte, error) {
 		stream.pad[i] = 0
 	}
 
-	for _, b := range header[crypto_core_hchacha20_INPUTBYTES:] {
+	for i, b := range header[crypto_core_hchacha20_INPUTBYTES:] {
 		stream.nonce[i+crypto_secretstream_xchacha20poly1305_COUNTERBYTES] = b
 	}
 	// fmt.Printf("stream: %+v\n", stream.streamState)
@@ -300,28 +301,38 @@ func (s *decryptor) Pull(in []byte) ([]byte, byte, error) {
 	//block[0] = in[0];
 	block[0] = in[0]
 	//crypto_onetimeauth_poly1305_update(&poly1305_state, block, sizeof block);
-	poly.Write(block[:])
+	if _, err = poly.Write(block[:]); err != nil {
+		return nil, 0, err
+	}
 
 	//
 	//c = in + (sizeof tag);
 	c := in[1:]
 	//crypto_onetimeauth_poly1305_update(&poly1305_state, c, mlen);
-	poly.Write(c[:mlen])
+	if _, err = poly.Write(c[:mlen]); err != nil {
+		return nil, 0, err
+	}
 
 	//crypto_onetimeauth_poly1305_update (&poly1305_state, _pad0, (0x10 - (sizeof block) + mlen) & 0xf);
 	padlen := (0x10 - len(block) + mlen) & 0xf
-	poly.Write(pad0[:padlen])
+	if _, err = poly.Write(pad0[:padlen]); err != nil {
+		return nil, 0, err
+	}
 
 	//
 	//STORE64_LE(slen, (uint64_t) adlen);
 	//crypto_onetimeauth_poly1305_update(&poly1305_state, slen, sizeof slen);
 	binary.LittleEndian.PutUint64(slen[:], uint64(0))
-	poly.Write(slen[:])
+	if _, err = poly.Write(slen[:]); err != nil {
+		return nil, 0, err
+	}
 
 	//STORE64_LE(slen, (sizeof block) + mlen);
 	//crypto_onetimeauth_poly1305_update(&poly1305_state, slen, sizeof slen);
 	binary.LittleEndian.PutUint64(slen[:], uint64(len(block)+mlen))
-	poly.Write(slen[:])
+	if _, err = poly.Write(slen[:]); err != nil {
+		return nil, 0, err
+	}
 
 	//
 	//crypto_onetimeauth_poly1305_final(&poly1305_state, mac);

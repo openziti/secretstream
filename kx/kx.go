@@ -11,11 +11,10 @@ const SeedBytes = 32
 const SecretKeyBytes = 32
 const PublicKeyBytes = 32
 const SessionKeyBytes = 32
-const scalarMultBytes = 32
 
-var invalidSeed = errors.New("invalid seed")
+// const scalarMultBytes = 32
+
 var cryptoError = errors.New("crypto error")
-var notImplemented = errors.New("not implemented")
 
 type KeyPair struct {
 	pk [SessionKeyBytes]byte
