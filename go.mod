@@ -1,5 +1,7 @@
 module github.com/netfoundry/secretstream
 
-go 1.13
+go 1.19
 
-require golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+require golang.org/x/crypto v0.6.0
+
+require golang.org/x/sys v0.5.0 // indirect
