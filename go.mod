@@ -1,4 +1,4 @@
-module github.com/netfoundry/secretstream
+module github.com/openziti/secretstream
 
 go 1.19
 
