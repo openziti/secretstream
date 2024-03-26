@@ -1,8 +1,8 @@
 package secretstream
 
 import (
-	"bytes"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -345,7 +345,7 @@ func (s *decryptor) Pull(in []byte) ([]byte, byte, error) {
 	//sodium_memzero(mac, sizeof mac);
 	//return -1;
 	//}
-	if !bytes.Equal(mac, stored_mac) {
+	if subtle.ConstantTimeCompare(mac, stored_mac) == 0 {
 		return nil, 0, cryptoFailure
 	}
 	//
