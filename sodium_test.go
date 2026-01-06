@@ -1,4 +1,4 @@
-// +build compat_test
+//go:build compat_test
 
 package secretstream
 
